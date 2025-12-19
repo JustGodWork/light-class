@@ -28,7 +28,6 @@ local meta_methods = {
     "__eq",
     "__lt",
     "__le",
-    "__index",
     "__newindex",
     "__call",
     "__pairs",
@@ -49,18 +48,12 @@ end
 
 --- Lua < 5.4 compatibility
 --- Make __tostring method returns class name and address
----@param obj table
----@param name string
----@return fun(self: table): string | nil
-local function make_name_string(obj, name)
-    local major, minor = get_lua_version();
-    if (major < 5 or (major == 5 and minor < 4)) then
-        return function(self)
-            return string.format("%s: %p", name, self);
-        end
-    end
+---@return fun(self: table): string
+local function __tostring(self)
+    local metatable = getmetatable(self);
+    local name = metatable.__name;
 
-    return nil;
+    return string.format("%s: %p", name, self);
 end
 
 ---@generic T: LightClass
@@ -76,7 +69,8 @@ local function new_class(name, super)
     local super_metatable = getmetatable(super) or {};
 
     metatable.__name = name;
-    metatable.__tostring = make_name_string(cls, name);
+    metatable.__tostring = super_metatable.__tostring ~= __tostring
+        and super_metatable.__tostring or __tostring;
 
     metatable.__index = super;
     metatable.__cls = true;
@@ -115,15 +109,13 @@ local function new_instance(cls, ...)
         end
     end
 
-    if (rawget(metatable, "__tostring") == nil) then
-        rawset(metatable, "__tostring",
-            make_name_string(obj, cls_metatable.__name)
-        );
+    metatable.__name = cls_metatable.__name;
+    metatable.__tostring = cls_metatable.__tostring ~= __tostring
+        and cls_metatable.__tostring or __tostring;
+    metatable.__call = function()
+        error("Cannot call instance directly. Create a new instance from the class.");
     end
 
-    rawset(metatable, "__call", function()
-        error("Cannot call instance directly. Create a new instance from the class.");
-    end);
 
     metatable.__index = cls;
     metatable.__cls = false;
@@ -238,6 +230,8 @@ end
 
 setmetatable(class, {
     __index = function(_, name)
+        assert(type(name) == "string", "Class name must be a string.");
+        assert(container[name] ~= nil, "Class '" .. name .. "' is not defined.");
         return container[name];
     end
 });
