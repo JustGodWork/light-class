@@ -39,7 +39,6 @@ local meta_methods = {
 ---@field public __name string The meta name of the class
 ---@field public __cls boolean Indicates that this is a class metatable
 ---@field public __clsi boolean Indicates that this is an instance metatable
----@field public __supermt lc_metatable The metatable of the superclass
 
 --- Get Lua version as major and minor numbers
 ---@return number major, number minor
@@ -80,7 +79,6 @@ local function new_class(name, super)
     metatable.__tostring = make_name_string(cls, name);
 
     metatable.__index = super;
-    metatable.__supermt = super_metatable;
     metatable.__cls = true;
     metatable.__clsi = false;
 
