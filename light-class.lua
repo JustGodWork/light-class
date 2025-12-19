@@ -3,7 +3,7 @@
 class = {};
 
 local container = {}; ---@type table<string, LightClass>
-local base_cls = {}; ---@class LightClassBase
+local base_cls = {}; ---@class LightClass
 local meta_methods = {
     "__mode",
     "__metatable",
@@ -237,7 +237,7 @@ setmetatable(class, {
 });
 
 setmetatable(base_cls, {
-    __name = "LightClassBase",
+    __name = "LightClass",
     __call = function(cls, ...)
         return new_instance(cls, ...);
     end
